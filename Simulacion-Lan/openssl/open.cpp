@@ -170,7 +170,9 @@ int main(int argc, char* argv[])
       i = bitset<8>(ctext.c_str()[j]).to_string();
       arr[j] = i;
     //  c += arr[j];
-      cout << "i es: "<<i<<endl;
+    //  cout << "i es: "<<i<<endl;
+
+
       n++;
   }
 
@@ -184,13 +186,13 @@ int main(int argc, char* argv[])
 
     for ( int a = 0; a < n; a++){
       //i = arr[a];
-      output2 += decode(arr[a]);
+      //output2 += decode(arr[a]);
       stringstream sstream(arr[a]);
         while (sstream.good()){
         bitset<8> bits;
         sstream >> bits;
         char b = char(bits.to_ulong());
-        cout << "b es: "<<b<<endl;
+        //cout << "b es: "<<b<<endl;
         output += b;
       }
     }
@@ -202,7 +204,7 @@ int main(int argc, char* argv[])
 
     cout<<"Sali del while"<<endl;
 
-    send(client,i.c_str(),len,0);
+    //send(client,i.c_str(),len,0);
     //recv(client, buffer, bufsize, 0);
 
     aes_decrypt(key, iv, ctext, rtext);
