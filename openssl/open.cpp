@@ -9,7 +9,6 @@
 #include <cstdio>
 #include <fstream>
 #include <cassert>
-#include <sstream>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -128,8 +127,6 @@ int main(int argc, char* argv[])
     secure_string ptext = "Now is the time for all good men to come to the aide of their country";
     secure_string ctext, rtext;
 
-    cout <<ptext<<endl;
-
     byte key[KEY_SIZE], iv[BLOCK_SIZE];
     gen_params(key, iv);
 
@@ -146,8 +143,7 @@ int main(int argc, char* argv[])
     size_t len = sizeof(ctext);
     char * c ;
     string i ;
-    string arr [bufsize];
-    int n = 0;
+    char arr [bufsize];
 
     cout<<ctext<<endl;
 /*
@@ -168,40 +164,14 @@ int main(int argc, char* argv[])
   for (std::size_t j = 0; j < ctext.size(); ++j)
   {
       i = bitset<8>(ctext.c_str()[j]).to_string();
-      arr[j] = i;
+      //arr[j] = i + '0';
     //  c += arr[j];
       cout << "i es: "<<i<<endl;
-      n++;
   }
 
     cout<<endl;
 
-    int t = 0;
-
-    //stringstream sstream(i);
-    string output;
-    string output2;
-
-    for ( int a = 0; a < n; a++){
-      //i = arr[a];
-      output2 += decode(arr[a]);
-      stringstream sstream(arr[a]);
-        while (sstream.good()){
-        bitset<8> bits;
-        sstream >> bits;
-        char b = char(bits.to_ulong());
-        cout << "b es: "<<b<<endl;
-        output += b;
-      }
-    }
-
-    cout<<endl;
-    cout<<output<<endl;
-    cout<<ctext<<endl;
-
-
     cout<<"Sali del while"<<endl;
-
     send(client,i.c_str(),len,0);
     //recv(client, buffer, bufsize, 0);
 

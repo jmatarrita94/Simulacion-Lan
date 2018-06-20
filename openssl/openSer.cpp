@@ -1,4 +1,3 @@
-#include <bitset>
 #include <iostream>
 #include <string>
 #include <memory>
@@ -9,7 +8,6 @@
 #include <cstdio>
 #include <fstream>
 #include <cassert>
-#include <sstream>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -95,14 +93,15 @@ using namespace std;
 int main(int argc, char* argv[])
 {
 
-    int client;
+    int client, server;
     int portNum = 1500; // NOTE that the port number is same for both client and server
     bool isExit = false;
     int bufsize = 1024;
     char buffer[bufsize];
-    char* ip = "127.0.0.1";
+
 
     struct sockaddr_in server_addr;
+    socklen_t size;
 
     client = socket(AF_INET, SOCK_STREAM, 0);
 
@@ -115,9 +114,10 @@ int main(int argc, char* argv[])
         exit(1);
     }
 
-    cout << "\n=> Socket client has been created..." << endl;
+    cout << "\n=> Socket server has been created..." << endl;
 
     server_addr.sin_family = AF_INET;
+    server_addr.sin_addr.s_addr = htons(INADDR_ANY);
     server_addr.sin_port = htons(portNum);
 
 
@@ -128,84 +128,53 @@ int main(int argc, char* argv[])
     secure_string ptext = "Now is the time for all good men to come to the aide of their country";
     secure_string ctext, rtext;
 
-    cout <<ptext<<endl;
-
     byte key[KEY_SIZE], iv[BLOCK_SIZE];
     gen_params(key, iv);
 
-    aes_encrypt(key, iv, ptext, ctext);
 
-    if (connect(client,(struct sockaddr *)&server_addr, sizeof(server_addr)) == 0)
-        cout << "=> Connection to the server port number: " << portNum << endl;
 
-    cout << "=> Awaiting confirmation from the server..." << endl; //line 40
-    recv(client, buffer, bufsize, 0);
-    cout << "=> Connection confirmed, you are good to go...";
-
-    cout << "\n\n=> Enter # to end the connection\n" << endl;
-    size_t len = sizeof(ctext);
-    char * c ;
-    string i ;
-    string arr [bufsize];
-    int n = 0;
-
-    cout<<ctext<<endl;
-/*
-    while (c != '\0'){
-      c = ctext.at(i);
-      arr[i] = c;
-      i++;
-      cout<<c;
+    if ((bind(client, (struct sockaddr*)&server_addr,sizeof(server_addr))) < 0)
+    {
+        cout << "=> Error binding connection, the socket has already been established..." << endl;
+        return -1;
     }
 
-    cout << endl;
 
-    for ( int j = 0; j < i; j++){
-      cout<<arr[j];
+    size = sizeof(server_addr);
+    cout << "=> Looking for clients..." << endl;
 
-    }*/
 
-  for (std::size_t j = 0; j < ctext.size(); ++j)
-  {
-      i = bitset<8>(ctext.c_str()[j]).to_string();
-      arr[j] = i;
-    //  c += arr[j];
-      cout << "i es: "<<i<<endl;
-      n++;
-  }
+    listen(client, 1);
 
-    cout<<endl;
 
-    int t = 0;
 
-    //stringstream sstream(i);
-    string output;
-    string output2;
+    int clientCount = 1;
+    server = accept(client,(struct sockaddr *)&server_addr,&size);
 
-    for ( int a = 0; a < n; a++){
-      //i = arr[a];
-      output2 += decode(arr[a]);
-      stringstream sstream(arr[a]);
-        while (sstream.good()){
-        bitset<8> bits;
-        sstream >> bits;
-        char b = char(bits.to_ulong());
-        cout << "b es: "<<b<<endl;
-        output += b;
-      }
+    if (server < 0)
+        cout << "=> Error on accepting..." << endl;
+
+    //strcpy(buffer, "=> Server connected...\n");
+    send(server, buffer, bufsize, 0);
+    cout << "=> Connected with the client #" << clientCount << ", you are good to go..." << endl;
+
+    cout << "Client: ";
+    int n;
+    while((errno = 0, (n = read(server, buffer, sizeof(buffer)))>0) ||
+          errno == EINTR)
+    {
+        if(n>0)
+            ptext.append(buffer, n);
+            cout<<ptext<<"ptext va siendo"<<endl;
     }
 
-    cout<<endl;
-    cout<<output<<endl;
-    cout<<ctext<<endl;
-
-
-    cout<<"Sali del while"<<endl;
-
-    send(client,i.c_str(),len,0);
-    //recv(client, buffer, bufsize, 0);
-
-    aes_decrypt(key, iv, ctext, rtext);
+    if(n < 0){
+        /* handle error - for example throw an exception*/
+    }
+    //cout << buffer << " es mi buffer"<<" con tamano"<<tamano<<endl;
+    //ptext = buffer;
+    cout<<ptext<<" esto es ptext"<<endl;
+    //aes_decrypt(key, iv, ptext, rtext);
 
     OPENSSL_cleanse(key, KEY_SIZE);
     OPENSSL_cleanse(iv, BLOCK_SIZE);
@@ -227,29 +196,7 @@ void gen_params(byte key[KEY_SIZE], byte iv[BLOCK_SIZE])
       throw std::runtime_error("RAND_bytes for iv failed");
 }
 
-void aes_encrypt(const byte key[KEY_SIZE], const byte iv[BLOCK_SIZE], const secure_string& ptext, secure_string& ctext)
-{
-    EVP_CIPHER_CTX_free_ptr ctx(EVP_CIPHER_CTX_new(), ::EVP_CIPHER_CTX_free);
-    int rc = EVP_EncryptInit_ex(ctx.get(), EVP_aes_256_cbc(), NULL, key, iv);
-    if (rc != 1)
-      throw std::runtime_error("EVP_EncryptInit_ex failed");
 
-    // Recovered text expands upto BLOCK_SIZE
-    ctext.resize(ptext.size()+BLOCK_SIZE);
-    int out_len1 = (int)ctext.size();
-
-    rc = EVP_EncryptUpdate(ctx.get(), (byte*)&ctext[0], &out_len1, (const byte*)&ptext[0], (int)ptext.size());
-    if (rc != 1)
-      throw std::runtime_error("EVP_EncryptUpdate failed");
-
-    int out_len2 = (int)ctext.size() - out_len1;
-    rc = EVP_EncryptFinal_ex(ctx.get(), (byte*)&ctext[0]+out_len1, &out_len2);
-    if (rc != 1)
-      throw std::runtime_error("EVP_EncryptFinal_ex failed");
-
-    // Set cipher text size now that we know it
-    ctext.resize(out_len1 + out_len2);
-}
 
 void aes_decrypt(const byte key[KEY_SIZE], const byte iv[BLOCK_SIZE], const secure_string& ctext, secure_string& rtext)
 {
