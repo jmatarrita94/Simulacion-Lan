@@ -199,8 +199,8 @@ int main(int argc, char* argv[])
 
     cout<<endl;
     cout<<output<<endl;
-    cout<<ctext<<endl;
-
+    //<<ctext<<endl;
+    ctext = output;
 
     cout<<"Sali del while"<<endl;
 
