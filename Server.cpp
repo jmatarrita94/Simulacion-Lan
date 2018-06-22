@@ -1,9 +1,4 @@
-/*!
- * Simple chat program (server side).cpp - http://github.com/hassanyf
- * Version - 2.0.1
- *
- * Copyright (c) 2016 Hassan M. Yousuf
- */
+
 
 #include <iostream>
 #include <string.h>
@@ -69,27 +64,10 @@ int main()
     if (server < 0)
         cout << "=> Error on accepting..." << endl;
 
-    while (server > 0)
-    {
-        strcpy(buffer, "=> Server connected...\n");
-        send(server, buffer, bufsize, 0);
-        cout << "=> Connected with the client #" << clientCount << ", you are good to go..." << endl;
-        cout << "\n=> Enter # to end the connection\n" << endl;
-
-
-
-        cout << "Client: ";
-        recv(server, buffer, bufsize, 0);
-        cout << buffer << " ";
-        char * bufferino = "Holi ravioli";
-        send(server, bufferino, bufsize, 0);
-
-        cout << "\n\n=> Connection terminated with IP " << inet_ntoa(server_addr.sin_addr);
-        close(server);
-        cout << "\nGoodbye..." << endl;
-        isExit = false;
-        exit(1);
-    }
+    recv(server, buffer, bufsize, 0);
+    cout<<"recibi "<<buffer<<endl;
+    char * bufferino = "Hola ravioli";
+    send(server,bufferino,bufsize,0);
 
     close(client);
     return 0;

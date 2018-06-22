@@ -1,139 +1,76 @@
-#include <openssl/evp.h>
-#include <openssl/err.h>
-#include <string.h>
+#include <bitset>
+#include <iostream>
+int Base64Encode(const unsigned char* buffer, size_t length, char** b64text) { //Encodes a binary safe base 64 string
+	BIO *bio, *b64;
+	BUF_MEM *bufferPtr;
 
+	b64 = BIO_new(BIO_f_base64());
+	bio = BIO_new(BIO_s_mem());
+	bio = BIO_push(b64, bio);
 
-int decrypt(unsigned char *ciphertext, int ciphertext_len, unsigned char *key,
-  unsigned char *iv, unsigned char *plaintext)
-{
-  EVP_CIPHER_CTX *ctx;
+	BIO_set_flags(bio, BIO_FLAGS_BASE64_NO_NL); //Ignore newlines - write everything in one line
+	BIO_write(bio, buffer, length);
+	BIO_flush(bio);
+	BIO_get_mem_ptr(bio, &bufferPtr);
+	BIO_set_close(bio, BIO_NOCLOSE);
+	BIO_free_all(bio);
 
-  int len;
+	*b64text=(*bufferPtr).data;
 
-  int plaintext_len;
-
-  /* Create and initialise the context */
-  if(!(ctx = EVP_CIPHER_CTX_new())) handleErrors();
-
-  /* Initialise the decryption operation. IMPORTANT - ensure you use a key
-   * and IV size appropriate for your cipher
-   * In this example we are using 256 bit AES (i.e. a 256 bit key). The
-   * IV size for *most* modes is the same as the block size. For AES this
-   * is 128 bits */
-  if(1 != EVP_DecryptInit_ex(ctx, EVP_aes_256_cbc(), NULL, key, iv))
-    handleErrors();
-
-  /* Provide the message to be decrypted, and obtain the plaintext output.
-   * EVP_DecryptUpdate can be called multiple times if necessary
-   */
-  if(1 != EVP_DecryptUpdate(ctx, plaintext, &len, ciphertext, ciphertext_len))
-    handleErrors();
-  plaintext_len = len;
-
-  /* Finalise the decryption. Further plaintext bytes may be written at
-   * this stage.
-   */
-  if(1 != EVP_DecryptFinal_ex(ctx, plaintext + len, &len)) handleErrors();
-  plaintext_len += len;
-
-  /* Clean up */
-  EVP_CIPHER_CTX_free(ctx);
-
-  return plaintext_len;
+	return (0); //success
 }
 
 
-void handleErrors(void)
-{
-  ERR_print_errors_fp(stderr);
-  abort();
+
+size_t calcDecodeLength(const char* b64input) { //Calculates the length of a decoded string
+	size_t len = strlen(b64input),
+		padding = 0;
+
+	if (b64input[len-1] == '=' && b64input[len-2] == '=') //last two chars are =
+		padding = 2;
+	else if (b64input[len-1] == '=') //last char is =
+		padding = 1;
+
+	return (len*3)/4 - padding;
 }
 
-int encrypt(unsigned char *plaintext, int plaintext_len, unsigned char *key,
-  unsigned char *iv, unsigned char *ciphertext)
-{
-  EVP_CIPHER_CTX *ctx;
+int Base64Decode(char* b64message, unsigned char** buffer, size_t* length) { //Decodes a base64 encoded string
+	BIO *bio, *b64;
 
-  int len;
+	int decodeLen = calcDecodeLength(b64message);
+	*buffer = (unsigned char*)malloc(decodeLen + 1);
+	(*buffer)[decodeLen] = '\0';
 
-  int ciphertext_len;
+	bio = BIO_new_mem_buf(b64message, -1);
+	b64 = BIO_new(BIO_f_base64());
+	bio = BIO_push(b64, bio);
 
-  /* Create and initialise the context */
-  if(!(ctx = EVP_CIPHER_CTX_new())) handleErrors();
+	BIO_set_flags(bio, BIO_FLAGS_BASE64_NO_NL); //Do not use newlines to flush buffer
+	*length = BIO_read(bio, *buffer, strlen(b64message));
+	assert(*length == decodeLen); //length should equal decodeLen, else something went horribly wrong
+	BIO_free_all(bio);
 
-  /* Initialise the encryption operation. IMPORTANT - ensure you use a key
-   * and IV size appropriate for your cipher
-   * In this example we are using 256 bit AES (i.e. a 256 bit key). The
-   * IV size for *most* modes is the same as the block size. For AES this
-   * is 128 bits */
-  if(1 != EVP_EncryptInit_ex(ctx, EVP_aes_256_cbc(), NULL, key, iv))
-    handleErrors();
-
-  /* Provide the message to be encrypted, and obtain the encrypted output.
-   * EVP_EncryptUpdate can be called multiple times if necessary
-   */
-  if(1 != EVP_EncryptUpdate(ctx, ciphertext, &len, plaintext, plaintext_len))
-    handleErrors();
-  ciphertext_len = len;
-
-  /* Finalise the encryption. Further ciphertext bytes may be written at
-   * this stage.
-   */
-  if(1 != EVP_EncryptFinal_ex(ctx, ciphertext + len, &len)) handleErrors();
-  ciphertext_len += len;
-
-  /* Clean up */
-  EVP_CIPHER_CTX_free(ctx);
-
-  return ciphertext_len;
+	return (0); //success
 }
 
+using namespace std;
 
 int main (void)
 {
-  /* Set up the key and iv. Do I need to say to not hard code these in a
-   * real application? :-)
-   */
+  //Encode To Base64
+  char* base64EncodeOutput;
+  char *text="Hello World";
 
-  /* A 256 bit key */
-  unsigned char *key = (unsigned char *)"01234567890123456789012345678901";
+  Base64Encode(text, strlen(text), &base64EncodeOutput);
+  printf("Output (base64): %s\n", base64EncodeOutput);
 
-  /* A 128 bit IV */
-  unsigned char *iv = (unsigned char *)"0123456789012345";
+  //Decode From Base64
+  char* base64DecodeOutput;
+  size_t test;
+  Base64Decode("SGVsbG8gV29ybGQ=", &base64DecodeOutput, &test);
+  printf("Output: %s %d\n", base64DecodeOutput, test);
 
-  /* Message to be encrypted */
-  unsigned char *plaintext =
-                (unsigned char *)"The quick brown fox jumps over the lazy dog";
-
-  /* Buffer for ciphertext. Ensure the buffer is long enough for the
-   * ciphertext which may be longer than the plaintext, dependant on the
-   * algorithm and mode
-   */
-  unsigned char ciphertext[128];
-
-  /* Buffer for the decrypted text */
-  unsigned char decryptedtext[128];
-
-  int decryptedtext_len, ciphertext_len;
-
-  /* Encrypt the plaintext */
-  ciphertext_len = encrypt (plaintext, strlen ((char *)plaintext), key, iv,
-                            ciphertext);
-
-  /* Do something useful with the ciphertext here */
-  printf("Ciphertext is:\n");
-  BIO_dump_fp (stdout, (const char *)ciphertext, ciphertext_len);
-
-  /* Decrypt the ciphertext */
-  decryptedtext_len = decrypt(ciphertext, ciphertext_len, key, iv,
-    decryptedtext);
-
-  /* Add a NULL terminator. We are expecting printable text */
-  decryptedtext[decryptedtext_len] = '\0';
-
-  /* Show the decrypted text */
-  printf("Decrypted text is:\n");
-  printf("%s\n", decryptedtext);
+  return(0);
 
 
   return 0;
