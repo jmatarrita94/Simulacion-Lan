@@ -19,6 +19,8 @@
 #include <netdb.h>
 
 
+#define SIZE 512;
+
 int Base64Encode(const unsigned char* buffer, size_t length, char** b64text) { //Encodes a binary safe base 64 string
 
   BIO *bio, *b64;
@@ -55,51 +57,55 @@ size_t calcDecodeLength(const char* b64input) { //Calculates the length of a dec
 }
 
 
-int main()
-{
+int main(){
 
-    int client;
-    int portNum = 1500; // NOTE that the port number is same for both client and server
-    int bufsize = 1024;
-    char buffer[bufsize];
-    char* ip = "127.0.0.1";
-    char * text = "hola";
-    char * encodedBase64;
+  int client;
+  int portNum = 1500; // NOTE that the port number is same for both client and server
+  int bufsize = 512;
+  char buffer[bufsize];
+  char* ip = "127.0.0.1";
+  char * text = "hola";
+  char * encodedBase64;
+  int id, sent;
 
-    Base64Encode(text, strlen(text), &encodedBase64);
+  id = open("file to transfer", O_RDONLY );
+  if ( -1 == id ) {
+    printf( "File not found %s\n", "file to transfer" );
+    return 1;
+  }
 
-    struct sockaddr_in server_addr;
+  Base64Encode(text, strlen(text), &encodedBase64);
 
-    client = socket(AF_INET, SOCK_STREAM, 0);
+  struct sockaddr_in server_addr;
 
-    if (client < 0)
-    {
-        printf("Error establishing socket \n");
-        exit(1);
-    }
+  client = socket(AF_INET, SOCK_STREAM, 0);
 
-
-    printf("Socket client has been created \n");
-
-
-    server_addr.sin_family = AF_INET;
-    server_addr.sin_port = htons(portNum);
+  if (client < 0){
+    printf("Error establishing socket \n");
+    exit(1);
+  }
 
 
-    if (connect(client,(struct sockaddr *)&server_addr, sizeof(server_addr)) == 0)
-        printf("Connection to the server port number : %d \n", portNum);
+  printf("Socket client has been created \n");
 
 
-    char * bufferino = "hola ravioli";
-    //printf("mande: %s \n", encodedBase64);
-    for (int i = 0; i < strlen(encodedBase64); i++){
-      printf("mande: %c \n", encodedBase64[i]);
-      printf("es i %d\n",i );
-    }
-    send(client,encodedBase64,sizeof(encodedBase64),0);
-    recv(client, buffer, bufsize, 0);
-    printf("recibi:  %s \n", buffer);
+  server_addr.sin_family = AF_INET;
+  server_addr.sin_port = htons(portNum);
 
-    close(client);
-    return 0;
+
+  if (connect(client,(struct sockaddr *)&server_addr, sizeof(server_addr)) == 0)
+    printf("Connection to the server port number : %d \n", portNum);
+
+  sent = 0;
+  while( st = read(id,buffer,SIZE)){
+    write(client,encodedBase64,strlen(encodedBase64));
+    sent++;
+  }
+
+
+  recv(client, buffer, bufsize, 0);
+  printf("recibi:  %s \n", buffer);
+
+  close(client);
+  return 0;
 }

@@ -13,7 +13,7 @@
 
 size_t calcDecodeLength(const char* b64input) { //Calculates the length of a decoded string
 	size_t len = strlen(b64input),
-		padding = 0;
+	padding = 0;
 
 	if (b64input[len-1] == '=' && b64input[len-2] == '=') //last two chars are =
 		padding = 2;
@@ -45,64 +45,71 @@ int Base64Decode(char* b64message, unsigned char** buffer, size_t* length) { //D
 int main()
 {
 
-    int client, server;
-    int portNum = 1500;
-    int bufsize = 1024;
-    char buffer[bufsize];
+	int client, server;
+  int portNum = 1500;
+  int bufsize = 512;
+  char buffer[bufsize];
 
-    struct sockaddr_in server_addr;
-    socklen_t size;
-
-
-    client = socket(AF_INET, SOCK_STREAM, 0);
-
-    if (client < 0)
-    {
-        printf("Error establishing socket...\n");
-        exit(1);
-    }
+  struct sockaddr_in server_addr;
+  socklen_t size;
 
 
-    printf("Socket Server has been created \n");
+  client = socket(AF_INET, SOCK_STREAM, 0);
+
+  if (client < 0){
+  	printf("Error establishing socket...\n");
+    exit(1);
+  }
 
 
-    server_addr.sin_family = AF_INET;
-    server_addr.sin_addr.s_addr = htons(INADDR_ANY);
-    server_addr.sin_port = htons(portNum);
+  printf("Socket Server has been created \n");
 
 
-
-    if ((bind(client, (struct sockaddr*)&server_addr,sizeof(server_addr))) < 0)
-    {
-        printf("Error binfin connection the socket has already been established...\n");
-        return -1;
-    }
-
-
-    size = sizeof(server_addr);
-    printf("Looking for clients...\n");
-
-
-    listen(client, 1);
+  server_addr.sin_family = AF_INET;
+  server_addr.sin_addr.s_addr = htons(INADDR_ANY);
+  server_addr.sin_port = htons(portNum);
 
 
 
-    int clientCount = 1;
-    server = accept(client,(struct sockaddr *)&server_addr,&size);
+  if ((bind(client, (struct sockaddr*)&server_addr,sizeof(server_addr))) < 0){
+  	printf("Error binfin connection the socket has already been established...\n");
+    return -1;
+  }
 
 
-    if (server < 0)
-        printf("Error on accepting\n");
+  size = sizeof(server_addr);
+  printf("Looking for clients...\n");
 
-    recv(server, buffer, 7, 0);
-    printf("recibi %s \n", buffer);
-    size_t test;
-    char * defecodeOutput;
-    Base64Decode(buffer, &defecodeOutput, &test);
 
-    char * bufferino = "Hola ravioli";
-    send(server,bufferino,bufsize,0);
+  listen(client, 1);
 
-    close(client);
-    return 0;
+
+
+  int clientCount = 1;
+  server = accept(client,(struct sockaddr *)&server_addr,&size);
+
+
+  if (server < 0)
+  	printf("Error on accepting\n");
+
+	int st;
+	memset(buffer, 0, bufsize * sizeof(char));
+ 	if(st = read(server, buffer, bufsize) > 0){
+		printf("entro \n");
+		printf("recibi %s \n", buffer);
+	}
+
+	printf("recibi %s \n", buffer);
+
+  size_t test = sizeof(buffer);
+  char * defecodeOutput;
+  Base64Decode(buffer, &defecodeOutput, &test);
+
+	printf("El texto descifrado es: %s \n", defecodeOutput);
+
+  char * bufferino = "Recibi el mensaje";
+  send(server,bufferino,bufsize,0);
+
+  close(client);
+  return 0;
 }
