@@ -1,25 +1,25 @@
-#include <stdio.h>
-#include <string.h>
-//Decodes Base64
-#include <stdio.h>
-#include <string.h>
+#include <assert.h>
+#include <arpa/inet.h>
+#include <fcntl.h>
+#include <netinet/in.h>
+#include <netdb.h>
 #include <openssl/bio.h>
 #include <openssl/evp.h>
-#include <stdint.h>
-#include <assert.h>
 #include <openssl/buffer.h>
+#include <stdio.h>
+#include <string.h>
+#include <stdio.h>
+#include <string.h>
+#include <stdint.h>
 #include <stdint.h>
 #include <string.h>
 #include <sys/types.h>
 #include <sys/socket.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
+#include <sys/stat.h>
 #include <stdlib.h>
 #include <unistd.h>
-#include <netdb.h>
 
 
-#define SIZE 512;
 
 int Base64Encode(const unsigned char* buffer, size_t length, char** b64text) { //Encodes a binary safe base 64 string
 
@@ -66,7 +66,8 @@ int main(){
   char* ip = "127.0.0.1";
   char * text = "hola";
   char * encodedBase64;
-  int id, sent;
+  int id, sent, st;
+  int SIZE = 512;
 
   id = open("file to transfer", O_RDONLY );
   if ( -1 == id ) {
@@ -74,7 +75,7 @@ int main(){
     return 1;
   }
 
-  Base64Encode(text, strlen(text), &encodedBase64);
+  Base64Encode(text, strlen(text),&encodedBase64);
 
   struct sockaddr_in server_addr;
 
