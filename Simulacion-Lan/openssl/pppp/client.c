@@ -20,7 +20,6 @@
 #include <unistd.h>
 
 
-
 int Base64Encode(const unsigned char* buffer, size_t length, char** b64text) { //Encodes a binary safe base 64 string
 
   BIO *bio, *b64;
@@ -57,6 +56,7 @@ size_t calcDecodeLength(const char* b64input) { //Calculates the length of a dec
 }
 
 
+
 int main(){
 
   int client;
@@ -66,8 +66,11 @@ int main(){
   char* ip = "127.0.0.1";
   char * text = "hola";
   char * encodedBase64;
-  int id, sent, st;
+  int id, st, cont;
+  long sent, psize;
   int SIZE = 512;
+  char* input = (char*)malloc(SIZE);
+  char* encoded = (char*)malloc(SIZE);
 
   id = open("file to transfer", O_RDONLY );
   if ( -1 == id ) {
@@ -75,7 +78,19 @@ int main(){
     return 1;
   }
 
+  FILE* outputFile = fopen("encodedText.txt", "w");
+  FILE * inputFile = fopen("input.txt", "r");
+  while(1){
+    cont = fread(input, sizeof(char),SIZE, inputFile);
+    if (cont == 0) break;
+    cont = Base64Encode(input,sizeof(char), &encodedBase64);
+    fwrite(encoded, sizeof(char),cont, outputFile);
+  }
   Base64Encode(text, strlen(text),&encodedBase64);
+  fwrite(encoded, sizeof(char),cont, outputFile);
+
+  fclose(inputFile);
+  fclose(outputFile);
 
   struct sockaddr_in server_addr;
 
@@ -97,9 +112,17 @@ int main(){
   if (connect(client,(struct sockaddr *)&server_addr, sizeof(server_addr)) == 0)
     printf("Connection to the server port number : %d \n", portNum);
 
+
+  id = open("encodedText.txt", O_RDONLY );
+  if ( -1 == id ) {
+    printf( "File not found %s\n", "file to transfer" );
+    return 1;
+  }
+
   sent = 0;
+  memset(buffer, 0, bufsize * sizeof(char));
   while( st = read(id,buffer,SIZE)){
-    write(client,encodedBase64,strlen(encodedBase64));
+    write(client,buffer,SIZE);
     sent++;
   }
 
@@ -108,5 +131,6 @@ int main(){
   printf("recibi:  %s \n", buffer);
 
   close(client);
+  close(id);
   return 0;
 }

@@ -11,6 +11,8 @@
 #include <arpa/inet.h>
 #include <stdio.h>
 
+
+
 size_t calcDecodeLength(const char* b64input) { //Calculates the length of a decoded string
 	size_t len = strlen(b64input),
 	padding = 0;
@@ -49,6 +51,7 @@ int main()
   int portNum = 1500;
   int bufsize = 512;
   char buffer[bufsize];
+	int cont;
 
   struct sockaddr_in server_addr;
   socklen_t size;
@@ -92,22 +95,37 @@ int main()
   if (server < 0)
   	printf("Error on accepting\n");
 
+
+
+	FILE* receivedFile = fopen("received.txt", "w");
+	FILE * decodedFile = fopen ("decoded.txt", "w");
 	int st;
 	memset(buffer, 0, bufsize * sizeof(char));
  	if(st = read(server, buffer, bufsize) > 0){
+		fwrite(buffer, sizeof(buffer),st, receivedFile);
 		printf("entro \n");
 		printf("recibi %s \n", buffer);
 	}
 
-	printf("recibi %s \n", buffer);
+	char* encoded = (char*)malloc(bufsize);
+	char* decoded = (char*)malloc(1*bufsize);
 
-  size_t test = sizeof(buffer);
-  char * defecodeOutput;
-  Base64Decode(buffer, &defecodeOutput, &test);
+	fclose(receivedFile);
+	receivedFile = fopen("received.txt", "r");
 
-	printf("El texto descifrado es: %s \n", defecodeOutput);
+	while(1){
+		cont = fread(encoded,sizeof(char),bufsize,receivedFile);
+		if (cont == 0) break;
+		cont = Base64Decode(encoded, &decoded, sizeof(encoded));
+		fwrite(decoded,sizeof(char),cont,decodedFile);
+	}
 
-  char * bufferino = "Recibi el mensaje";
+	free (encoded);
+	free(decoded);
+	fclose(receivedFile);
+	fclose(decodedFile);
+
+  char * bufferino = "ACK";
   send(server,bufferino,bufsize,0);
 
   close(client);
