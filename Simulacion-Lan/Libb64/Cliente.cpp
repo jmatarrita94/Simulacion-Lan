@@ -79,13 +79,14 @@ int client (char * encodedFile){
 	int client;
 	int portNum = 1500; // NOTE that the port number is same for both client and server
 	bool isExit = false;
-	int bufsize = 1024;
+	int bufsize = 512;
 	long sent, psize;
 	int id, st;
 	double rate;
 	char buffer[bufsize];
 	char* ip = "127.0.0.1";
-	Chrono ci, cf;
+	Chrono ci = new Chrono();
+	Chrono cf = new Chrono();
 
 	psize = 128*1024*1024;
 
@@ -118,6 +119,7 @@ int client (char * encodedFile){
 		}
 
 		ci.getTime();
+		sent = 0;
 		memset(buffer, 0, bufsize * sizeof(char));
 		while(st = read (id, buffer, SIZE) ){
 			cout<<"algo"<<endl;

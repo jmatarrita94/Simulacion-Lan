@@ -20,8 +20,47 @@
 #include <unistd.h>
 
 
-int Base64Encode(const unsigned char* buffer, size_t length, char** b64text) { //Encodes a binary safe base 64 string
+size_t calcDecodeLength(const char* b64input) { //Calculates the length of a decoded string
+	size_t len = strlen(b64input),
+		padding = 0;
 
+	if (b64input[len-1] == '=' && b64input[len-2] == '=') //last two chars are =
+		padding = 2;
+	else if (b64input[len-1] == '=') //last char is =
+		padding = 1;
+
+	return (len*3)/4 - padding;
+}
+
+
+int Base64Decode(char* b64message, unsigned char** buffer, size_t* length) { //Decodes a base64 encoded string
+
+	BIO *bio, *b64;
+
+	int decodeLen = calcDecodeLength(b64message);
+	printf("Llega  \n");
+	*buffer = (unsigned char*)malloc(decodeLen + 1);
+	printf("Llega  \n");
+	(*buffer)[decodeLen] = '\0';
+	printf("Llega  \n");
+	bio = BIO_new_mem_buf(b64message, -1);
+	printf("Llega  \n");
+	b64 = BIO_new(BIO_f_base64());
+	printf("Llega  \n");
+	bio = BIO_push(b64, bio);
+	printf("Llega  \n");
+
+	BIO_set_flags(bio, BIO_FLAGS_BASE64_NO_NL); //Do not use newlines to flush buffer
+	printf("Llega  \n");
+	*length = BIO_read(bio, *buffer, strlen(b64message));
+	assert(*length == decodeLen); //length should equal decodeLen, else something went horribly wrong
+
+	printf("Llega A \n");
+	BIO_free_all(bio);
+	return (0); //success
+}
+
+int Base64Encode(const unsigned char* buffer, size_t length, char** b64text) { //Encodes a binary safe base 64 string
   BIO *bio, *b64;
 	BUF_MEM *bufferPtr;
 
@@ -37,27 +76,16 @@ int Base64Encode(const unsigned char* buffer, size_t length, char** b64text) { /
 	BIO_free_all(bio);
 
 	*b64text=(*bufferPtr).data;
-
 	return (0); //success
 }
 
 
 
-size_t calcDecodeLength(const char* b64input) { //Calculates the length of a decoded string
-	size_t len = strlen(b64input),
-		padding = 0;
-
-	if (b64input[len-1] == '=' && b64input[len-2] == '=') //last two chars are =
-		padding = 2;
-	else if (b64input[len-1] == '=') //last char is =
-		padding = 1;
-
-	return (len*3)/4 - padding;
-}
-
 
 
 int main(){
+
+
 
   int client;
   int portNum = 1500; // NOTE that the port number is same for both client and server
@@ -71,23 +99,28 @@ int main(){
   int SIZE = 512;
   char* input = (char*)malloc(SIZE);
   char* encoded = (char*)malloc(SIZE);
+  char * prueba;
 
-  id = open("file to transfer", O_RDONLY );
-  if ( -1 == id ) {
-    printf( "File not found %s\n", "file to transfer" );
-    return 1;
-  }
-
+  //Base64Encode(text,strlen(text), &encodedBase64);
+  //printf("Encoded : %s \n", encodedBase64);
+  size_t test;
+  //Base64Decode(encodedBase64,&prueba,&test);
+  printf("Decoded : %s \n", prueba);
   FILE* outputFile = fopen("encodedText.txt", "w");
   FILE * inputFile = fopen("input.txt", "r");
   while(1){
+    printf("Llego al while \n");
     cont = fread(input, sizeof(char),SIZE, inputFile);
     if (cont == 0) break;
-    cont = Base64Encode(input,sizeof(char), &encodedBase64);
-    fwrite(encoded, sizeof(char),cont, outputFile);
+    cont = Base64Encode(input,strlen(input), &encodedBase64);
+		printf("Base64 es %s \n",encodedBase64);
+    Base64Decode(encodedBase64,&prueba,&test);
+    printf("desenmaaaa %s \n", prueba);
+    printf("el buffer en Base64 es  y cont es  %s %d \n", encodedBase64, cont);
+    fwrite(encodedBase64, sizeof(char),strlen(encodedBase64), outputFile);
   }
-  Base64Encode(text, strlen(text),&encodedBase64);
-  fwrite(encoded, sizeof(char),cont, outputFile);
+  //Base64Encode(text, strlen(text),&encodedBase64);
+  //fwrite(encodedBase64, sizeof(encodedBase64),cont, outputFile);
 
   fclose(inputFile);
   fclose(outputFile);
@@ -120,9 +153,10 @@ int main(){
   }
 
   sent = 0;
+  int it = 0;
   memset(buffer, 0, bufsize * sizeof(char));
   while( st = read(id,buffer,SIZE)){
-    write(client,buffer,SIZE);
+    write(client,buffer,strlen(buffer + (SIZE * it ) % 512));
     sent++;
   }
 

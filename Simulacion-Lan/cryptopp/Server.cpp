@@ -1,61 +1,42 @@
-#include <stdio.h>
+#include <crypto++/cryptlib.h>
+#include <cryptopp/base64.h>
+#include "cryptopp/base64.h"
+#include <iostream>
 #include <string.h>
-#include <openssl/bio.h>
-#include <openssl/evp.h>
-#include <stdint.h>
-#include <assert.h>
-#include <string.h>
+#include <fcntl.h>
+#include <stdlib.h>
+#include <unistd.h>
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <sys/stat.h>
 #include <netinet/in.h>
-#include <arpa/inet.h>
-#include <stdio.h>
+#include <netdb.h>
 
+using namespace std;
+using namespace CryptoPP;
+int size = 512;
 
+int decodeFile(char * name){
+  cout<<"llego a decode"<<endl;
+  int cnt = 0;
+  FILE * inputFile = fopen(name, "r");
+  FILE * outputFile = fopen("decoded.txt", "w");
+  string decoded;
+  char * input = (char*)malloc(size);
+  while (1){
+    cnt = fread(input, sizeof(char), size, inputFile);
+    if (cnt == 0) break;
+    decoded = decodeB64(input);
+    fwrite(decoded.c_str(), sizeof(char),strlen(decoded.c_str()), outputFile);
+  }
 
-size_t calcDecodeLength(const char* b64input) { //Calculates the length of a decoded string
-	size_t len = strlen(b64input),
-	padding = 0;
-
-	if (b64input[len-1] == '=' && b64input[len-2] == '=') //last two chars are =
-		padding = 2;
-	else if (b64input[len-1] == '=') //last char is =
-		padding = 1;
-
-	return (len*3)/4 - padding;
+  fclose(inputFile);
+  fclose(outputFile);
+  return 0;
 }
 
-int Base64Decode(char* b64message, unsigned char** buffer, size_t* length) { //Decodes a base64 encoded string
-
-	BIO *bio, *b64;
-
-	int decodeLen = calcDecodeLength(b64message);
-	printf("Llega  \n");
-	*buffer = (unsigned char*)malloc(decodeLen + 1);
-	printf("Llega  \n");
-	(*buffer)[decodeLen] = '\0';
-	printf("Llega  \n");
-	bio = BIO_new_mem_buf(b64message, -1);
-	printf("Llega  \n");
-	b64 = BIO_new(BIO_f_base64());
-	printf("Llega  \n");
-	bio = BIO_push(b64, bio);
-	printf("Llega  \n");
-
-	BIO_set_flags(bio, BIO_FLAGS_BASE64_NO_NL); //Do not use newlines to flush buffer
-	printf("Llega as \n");
-	*length = BIO_read(bio, *buffer, strlen(b64message));
-	assert(*length == decodeLen); //length should equal decodeLen, else something went horribly wrong
-
-	printf("Llega A \n");
-	BIO_free_all(bio);
-	return (0); //success
-}
-
-int main()
-{
-
-	int client, server;
+int main(){
+  int client, server;
   int portNum = 1500;
   int bufsize = 512;
   char buffer[bufsize];
