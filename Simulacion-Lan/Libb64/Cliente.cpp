@@ -12,6 +12,9 @@
 #define SIZE 512
 using namespace std;
 
+/*
+	decodes a base64 encoded file using libb64 encode algorythm
+*/
 void encode (FILE* inputFile, FILE* outputFile){
 	base64::encoder E;
 	int size = SIZE;
@@ -47,35 +50,11 @@ void encode (FILE* inputFile, FILE* outputFile){
 
 
 
-void decode(FILE* inputFile, FILE* outputFile)
-{
-	base64::decoder E;
-	/* set up a destination buffer large enough to hold the decoded data */
-	int size = SIZE;
-	char* encoded = (char*)malloc(size);
-	char* decoded = (char*)malloc(1*size); /* ~3/4 x encoded */
-	/* we need an encoder and decoder state */
-	/* store the number of bytes encoded by a single call */
-	int cnt = 0;
-
-	/* gather data from the input and send it to the output */
-	while (1)
-	{
-		cnt = fread(encoded, sizeof(char), size, inputFile);
-		if (cnt == 0) break;
-		cnt = E.decode(encoded, sizeof(encoded), decoded);
-		/* output the encoded bytes to the output file */
-		fwrite(decoded, sizeof(char), cnt, outputFile);
-	}
-	/*---------- START DECODING  ----------*/
-
-	free(encoded);
-	free(decoded);
-}
-
-
-
-int client (char * encodedFile){
+/*
+	handles all the logic of the client side, creating the socket and connecting it to the server plus send the
+	file to be send to the server to encryption before sending it. Also times how long it took the process to be done.
+*/
+int doClient (char * encodedFile){
 	int client;
 	int portNum = 1500; // NOTE that the port number is same for both client and server
 	bool isExit = false;
@@ -85,8 +64,7 @@ int client (char * encodedFile){
 	double rate;
 	char buffer[bufsize];
 	char* ip = "127.0.0.1";
-	Chrono ci = new Chrono();
-	Chrono cf = new Chrono();
+	Chrono ci, cf;
 
 	psize = 128*1024*1024;
 
@@ -120,10 +98,11 @@ int client (char * encodedFile){
 
 		ci.getTime();
 		sent = 0;
+		int it = 0;
 		memset(buffer, 0, bufsize * sizeof(char));
 		while(st = read (id, buffer, SIZE) ){
 			cout<<"algo"<<endl;
-			st = write(client,buffer, SIZE);
+			st = write(client,buffer, strlen(buffer + (SIZE * it) % 512));
 			sent += st;
 			cout<<"Enviado : "<<sent<<endl;
 			if ((sent % psize) == 0){
@@ -136,6 +115,7 @@ int client (char * encodedFile){
 			cout<<"algo"<<endl;
 		}
 
+		recv(client, buffer, bufsize, 0);
 		cf.getTime();	// Get the time now
 		cf -= ci;		// Calculate the difference
 
@@ -176,7 +156,7 @@ int main(){
 	fclose(inputFile);
 	fclose(encodedFile);
 
-	if  ( client("encodedTest.text")<0 ){
+	if  ( doClient("encodedTest.text")<0 ){
 		cout<<"No se pudo mandar el mensaje"<<endl;
 	}else{
 		cout<<"Se mando el mensaje"<<endl;

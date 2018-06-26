@@ -1,3 +1,4 @@
+
 #include <crypto++/cryptlib.h>
 #include <cryptopp/base64.h>
 #include "cryptopp/base64.h"
@@ -16,6 +17,12 @@ using namespace std;
 using namespace CryptoPP;
 int size = 512;
 
+
+
+/*
+  Encodes a string with cryptopp base64 algorythm
+
+*/
 string encodeB64(string input){
   string in(input);
 
@@ -33,23 +40,9 @@ string encodeB64(string input){
   return encoded;
 }
 
-string decodeB64(string input){
-  cout<<"llego a decode b64"<<endl;
-  string in(input);
-
-  string decoded;
-
-  CryptoPP::StringSource ss(
-    in,
-    true,
-    new CryptoPP::Base64Decoder(
-        new CryptoPP::StringSink(decoded)
-    )
-  );
-
-  return decoded;
-}
-
+/*
+  Encodes a file with base64 cryptopp algorythm
+*/
 int encodeFile(char* name){
   int cnt = 0;
   FILE * inputFile = fopen(name, "r");
@@ -70,25 +63,6 @@ int encodeFile(char* name){
   return 0;
 }
 
-int decodeFile(char * name){
-  cout<<"llego a decode"<<endl;
-  int cnt = 0;
-  FILE * inputFile = fopen(name, "r");
-  FILE * outputFile = fopen("decoded.txt", "w");
-  string decoded;
-  char * input = (char*)malloc(size);
-  while (1){
-    cnt = fread(input, sizeof(char), size, inputFile);
-    if (cnt == 0) break;
-    decoded = decodeB64(input);
-    fwrite(decoded.c_str(), sizeof(char),strlen(decoded.c_str()), outputFile);
-  }
-
-  fclose(inputFile);
-  fclose(outputFile);
-  return 0;
-}
-
 int main(){
 
   int client;
@@ -98,9 +72,14 @@ int main(){
   char* ip = "127.0.0.1";
   int id;
   long sent, st;
-  encodeFile("a.txt");
-  decodeFile("encoded.txt");
 
+  //encodes the file to be transfer
+  encodeFile("a.txt");
+
+    /*
+    Creates a socket and makes sure that it works
+
+  */
   struct sockaddr_in server_addr;
 
   client = socket(AF_INET, SOCK_STREAM, 0);
@@ -117,17 +96,21 @@ int main(){
   server_addr.sin_family = AF_INET;
   server_addr.sin_port = htons(portNum);
 
+/***/
 
+  /*conects the socket client to a server*/
   if (connect(client,(struct sockaddr *)&server_addr, sizeof(server_addr)) == 0)
     printf("Connection to the server port number : %d \n", portNum);
 
 
-  id = open("encodedText.txt", O_RDONLY );
+  //opens the file to be transfer to the server side
+  id = open("encoded.txt", O_RDONLY );
   if ( -1 == id ) {
     printf( "File not found %s\n", "file to transfer" );
     return 1;
   }
 
+  //sents the file to the server
   sent = 0;
   int it = 0;
   memset(buffer, 0, bufsize * sizeof(char));
@@ -137,6 +120,7 @@ int main(){
   }
 
 
+  //receives confirmation that it finished
   recv(client, buffer, bufsize, 0);
   printf("recibi:  %s \n", buffer);
 

@@ -16,6 +16,34 @@ using namespace std;
 using namespace CryptoPP;
 int size = 512;
 
+
+/*
+Decodes a string thats encoded with base 64 cryptopp algorythm
+
+
+*/
+string decodeB64(string input){
+  cout<<"llego a decode b64"<<endl;
+  string in(input);
+
+  string decoded;
+
+  CryptoPP::StringSource ss(
+    in,
+    true,
+    new CryptoPP::Base64Decoder(
+        new CryptoPP::StringSink(decoded)
+    )
+  );
+
+  return decoded;
+}
+
+
+/*
+Receives a const * char with the name of a file. It reads the file that should contain text encrypted with a
+cryptopp base64 algorythm and sends it to decode.
+*/
 int decodeFile(char * name){
   cout<<"llego a decode"<<endl;
   int cnt = 0;
@@ -45,9 +73,10 @@ int main(){
   struct sockaddr_in server_addr;
   socklen_t size;
 
-
+  //creates a soceket.
   client = socket(AF_INET, SOCK_STREAM, 0);
 
+  //makes sure socket is done right
   if (client < 0){
   	printf("Error establishing socket...\n");
     exit(1);
@@ -57,12 +86,13 @@ int main(){
   printf("Socket Server has been created \n");
 
 
+  //socket parameters
   server_addr.sin_family = AF_INET;
   server_addr.sin_addr.s_addr = htons(INADDR_ANY);
   server_addr.sin_port = htons(portNum);
 
 
-
+  //it starts the bind
   if ((bind(client, (struct sockaddr*)&server_addr,sizeof(server_addr))) < 0){
   	printf("Error binfin connection the socket has already been established...\n");
     return -1;
@@ -72,19 +102,24 @@ int main(){
   size = sizeof(server_addr);
   printf("Looking for clients...\n");
 
-
+  //it starts listening to another socket.
   listen(client, 1);
 
 
 
   int clientCount = 1;
+
+  //accepts the other Socket
   server = accept(client,(struct sockaddr *)&server_addr,&size);
 
 
   if (server < 0)
   	printf("Error on accepting\n");
 
+/*
+  Receives a file from the client side and writes it in another file.
 
+*/
 
 	FILE* receivedFile = fopen("received.txt", "w");
 	FILE * decodedFile = fopen ("decoded.txt", "w");
@@ -96,28 +131,12 @@ int main(){
 		printf("recibi %s \n", buffer);
 	}
 
-	char* encoded = (char*)malloc(bufsize);
-	char* decoded ;
+  fclose(receivedFile);
 
-	fclose(receivedFile);
-	receivedFile = fopen("received.txt", "r");
+  //sends the file to be decoded
+  decodeFile("received.txt");
 
-	while(1){
-		cont = fread(encoded,sizeof(char),bufsize,receivedFile);
-		if (cont == 0) break;
-		//Base64Decode(encodedBase64,&prueba,&test);
-		size_t test;
-		printf("encoded es: %s \n",encoded);
-		cont = Base64Decode(encoded, &decoded, &test);
-		printf("Llega %s \n", decoded);
-		fwrite(decoded,sizeof(char),cont,decodedFile);
-	}
-
-	free (encoded);
-	free(decoded);
-	fclose(receivedFile);
-	fclose(decodedFile);
-
+  //sends ack to let know the client that it finished.
   char * bufferino = "ACK";
   send(server,bufferino,bufsize,0);
 

@@ -1,2 +1,0 @@
-gcc server.c -o server -lssl -lcrypto
-gc client.c -o client -lssl -lcrypto 

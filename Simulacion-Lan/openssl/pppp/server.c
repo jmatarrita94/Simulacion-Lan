@@ -12,7 +12,7 @@
 #include <stdio.h>
 
 
-
+/*Calculates the length of a char * for padding*/
 size_t calcDecodeLength(const char* b64input) { //Calculates the length of a decoded string
 	size_t len = strlen(b64input),
 	padding = 0;
@@ -25,6 +25,7 @@ size_t calcDecodeLength(const char* b64input) { //Calculates the length of a dec
 	return (len*3)/4 - padding;
 }
 
+/**Decodes a char * messages that es encoded with openssl base64 encode algorythm*/
 int Base64Decode(char* b64message, unsigned char** buffer, size_t* length) { //Decodes a base64 encoded string
 
 	BIO *bio, *b64;
@@ -55,6 +56,7 @@ int Base64Decode(char* b64message, unsigned char** buffer, size_t* length) { //D
 int main()
 {
 
+		/*The logic of creating a socket, connecting it with the server and making sure everything is okay starts here*/
 	int client, server;
   int portNum = 1500;
   int bufsize = 512;
@@ -103,10 +105,14 @@ int main()
   if (server < 0)
   	printf("Error on accepting\n");
 
+	/*End*/
+
 
 
 	FILE* receivedFile = fopen("received.txt", "w");
 	FILE * decodedFile = fopen ("decoded.txt", "w");
+
+	/**/
 	int st;
 	memset(buffer, 0, bufsize * sizeof(char));
  	if(st = read(server, buffer, bufsize) > 0){

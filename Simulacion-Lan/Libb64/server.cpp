@@ -11,7 +11,7 @@
 #define SIZE 512
 using namespace std;
 
-
+/*Decodes a file that uses libb64 base64 algorythm*/
 void decode(FILE* inputFile, FILE* outputFile)
 {
 	base64::decoder E;
@@ -39,8 +39,11 @@ void decode(FILE* inputFile, FILE* outputFile)
 }
 
 
-
-int server(){
+/*
+	handles all the logic of creating a server and conecting it to the client plus send the encoded file to decoded
+	and sends confirmation to the client side.
+*/
+int doServer(){
     int client, server;
     int portNum = 1500;
     bool isExit = false;
@@ -94,12 +97,11 @@ int server(){
     FILE * receivedFile = fopen("received.txt", "w");
     memset(buffer, 0, bufsize * sizeof(char));
     while ( (st = read( server, buffer, bufsize )) > 0 ) {	// Read returns EOF when we shutdown
-      cout<<"algo"<<st<<endl;
       fwrite(buffer, sizeof(buffer), bufsize, receivedFile);				// the writing socket in client
-      cout<<"algo"<<endl;
     }
-    cout<<"algo"<<endl;
 
+		char * bufferino = "ACK";
+	  send(server,bufferino,bufsize,0);
 
   /*  FILE* output = fopen("Message.txt", "w");
     decode(receivedFile, output);*/
@@ -113,7 +115,7 @@ int server(){
 
 int main (){
 
-  if (server() == 0){
+  if (doServer() == 0){
     cout<<"funciono"<<endl;
   }else{
     cout<<"no funciono"<<endl;

@@ -19,7 +19,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 
-
+/*Calculates the length of a char * for padding*/
 size_t calcDecodeLength(const char* b64input) { //Calculates the length of a decoded string
 	size_t len = strlen(b64input),
 		padding = 0;
@@ -32,7 +32,7 @@ size_t calcDecodeLength(const char* b64input) { //Calculates the length of a dec
 	return (len*3)/4 - padding;
 }
 
-
+/**Decodes a char * messages that es encoded with openssl base64 encode algorythm*/
 int Base64Decode(char* b64message, unsigned char** buffer, size_t* length) { //Decodes a base64 encoded string
 
 	BIO *bio, *b64;
@@ -60,6 +60,7 @@ int Base64Decode(char* b64message, unsigned char** buffer, size_t* length) { //D
 	return (0); //success
 }
 
+/**Encodes a char * messages with openssl base64 encode algorythm*/
 int Base64Encode(const unsigned char* buffer, size_t length, char** b64text) { //Encodes a binary safe base 64 string
   BIO *bio, *b64;
 	BUF_MEM *bufferPtr;
@@ -101,13 +102,13 @@ int main(){
   char* encoded = (char*)malloc(SIZE);
   char * prueba;
 
-  //Base64Encode(text,strlen(text), &encodedBase64);
-  //printf("Encoded : %s \n", encodedBase64);
+
   size_t test;
-  //Base64Decode(encodedBase64,&prueba,&test);
-  printf("Decoded : %s \n", prueba);
+ 	/*Opens file that are received to encode*/
   FILE* outputFile = fopen("encodedText.txt", "w");
   FILE * inputFile = fopen("input.txt", "r");
+
+	/*This loops makes sure that the file that is to be send to the server gets encoded with base64 openssl algorythm*/
   while(1){
     printf("Llego al while \n");
     cont = fread(input, sizeof(char),SIZE, inputFile);
@@ -119,12 +120,11 @@ int main(){
     printf("el buffer en Base64 es  y cont es  %s %d \n", encodedBase64, cont);
     fwrite(encodedBase64, sizeof(char),strlen(encodedBase64), outputFile);
   }
-  //Base64Encode(text, strlen(text),&encodedBase64);
-  //fwrite(encodedBase64, sizeof(encodedBase64),cont, outputFile);
 
   fclose(inputFile);
   fclose(outputFile);
 
+	/*The logic of creating a socket, connecting it with the server and making sure everything is okay starts here*/
   struct sockaddr_in server_addr;
 
   client = socket(AF_INET, SOCK_STREAM, 0);
@@ -145,7 +145,9 @@ int main(){
   if (connect(client,(struct sockaddr *)&server_addr, sizeof(server_addr)) == 0)
     printf("Connection to the server port number : %d \n", portNum);
 
+	/*End*/
 
+	/*Opens the encoded file to be send to the server side*/
   id = open("encodedText.txt", O_RDONLY );
   if ( -1 == id ) {
     printf( "File not found %s\n", "file to transfer" );
@@ -160,7 +162,7 @@ int main(){
     sent++;
   }
 
-
+	/*receives confirmation**/
   recv(client, buffer, bufsize, 0);
   printf("recibi:  %s \n", buffer);
 
