@@ -1,5 +1,5 @@
 CC = g++ 
-ARGS =  -lcryptopp -std=c++11 
+ARGS = -l rt  -lcryptopp -std=c++11 
 
 all : Client Server 
 

@@ -12,6 +12,7 @@
 #include <sys/stat.h>
 #include <netinet/in.h>
 #include <netdb.h>
+#include "Chrono.cpp"
 
 using namespace std;
 using namespace CryptoPP;
@@ -48,16 +49,18 @@ int encodeFile(char* name){
   FILE * inputFile = fopen(name, "r");
   FILE * outputFile = fopen("encoded.txt", "w");
   string encoded;
+  int i = 0;
   char * input =(char*)malloc(size);
   while (1){
     cnt = fread(input, sizeof(char), size, inputFile);
+    i++;
     cout<<"llego"<<endl;
     if (cnt == 0) break;
     encoded = encodeB64(input);
     cout<<encoded<<endl;
     fwrite(encoded.c_str(), sizeof(char),strlen(encoded.c_str()), outputFile);
   }
-
+  cout<<i<<"es i"<<endl;
   fclose(inputFile);
   fclose(outputFile);
   return 0;
@@ -71,7 +74,10 @@ int main(){
   char buffer[bufsize];
   char* ip = "127.0.0.1";
   int id;
-  long sent, st;
+  long sent, st, psize;
+  Chrono ci, cf;
+  double rate;
+  psize = 128*1024*1024;
 
   //encodes the file to be transfer
   encodeFile("a.txt");
@@ -110,19 +116,42 @@ int main(){
     return 1;
   }
 
-  //sents the file to the server
+  //sents the file to the server and takes times
+  ci.getTime();
   sent = 0;
   int it = 0;
+  int i = 0;
   memset(buffer, 0, bufsize * sizeof(char));
-  while( st = read(id,buffer,size)){
-    write(client,buffer,strlen(buffer + (size * it ) % 512));
+  while(st = read(id,buffer,size)){
+    cout<<buffer<< "es i aajo"<<endl;
+    //int satan = strlen(buffer + (size * it )) % 512;
+    //printf("len: %d\n", satan);
+    write(client,buffer, st);
+    memset(buffer, 0, bufsize * sizeof(char));
     sent++;
+    it++;
+    if ((sent % psize) == 0){
+      cout<<"algo"<<endl;
+      cf.getTime();
+      cf -= ci;
+      rate = cf.getSecs() + (cf.getnSecs() / 1000000000);
+      rate = (double)(sent/1024/1024)/rate;
+    }
   }
 
+  shutdown( client, SHUT_WR );
 
   //receives confirmation that it finished
   recv(client, buffer, bufsize, 0);
   printf("recibi:  %s \n", buffer);
+  cf.getTime();	// Get the time now
+  cf -= ci;		// Calculate the difference
+
+  printf( "Time taken to transfer %ld bytes is: %ld sec., %ld ns\n", sent, cf.getSecs(), cf.getnSecs() );
+
+  rate = cf.getSecs() + (cf.getnSecs()/1000000000);
+  rate = (double) (sent / 1024 /1024) / rate;
+  printf( "Total transfer rate: %f MBps\n", rate );
 
   close(client);
   close(id);

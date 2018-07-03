@@ -125,8 +125,9 @@ int main(){
 	FILE * decodedFile = fopen ("decoded.txt", "w");
 	int st;
 	memset(buffer, 0, bufsize * sizeof(char));
- 	if(st = read(server, buffer, bufsize) > 0){
-		fwrite(buffer, sizeof(char),strlen(buffer), receivedFile);
+ 	while((st = read(server, buffer, bufsize)) > 0){
+    cout<<"St es: "<<st<<endl;
+		fwrite(buffer, sizeof(char),st, receivedFile);
 		printf("entro \n");
 		printf("recibi %s \n", buffer);
 	}

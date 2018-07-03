@@ -1,25 +1,27 @@
-#include <b64/encode.h>
-#include <b64/decode.h>
-#include <fcntl.h>
-#include <stdio.h>
-#include <stdlib.h>
+#include "base64.cpp"
 #include <string.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
+#include <fcntl.h>
+#include <stdlib.h>
 #include <unistd.h>
-#include <assert.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <sys/stat.h>
+#include <netinet/in.h>
+#include <netdb.h>
 #include "Chrono.cpp"
+
 #define SIZE 512
 using namespace std;
+
 
 /*
 	decodes a base64 encoded file using libb64 encode algorythm
 */
-void encode (FILE* inputFile, FILE* outputFile){
-	base64::encoder E;
+void encodeFile (FILE* inputFile, FILE* outputFile){
+
 	int size = SIZE;
 	char * input =  (char*)malloc(size);
-	char* encoded = (char*)malloc(2*size); /* ~4/3 x input */
+	string encoded; /* ~4/3 x input */
 	/* we need an encoder and decoder state */
 
 	/* store the number of bytes encoded by a single call */
@@ -32,18 +34,20 @@ void encode (FILE* inputFile, FILE* outputFile){
 	{
 		cnt = fread(input, sizeof(char), size, inputFile);
 		if (cnt == 0) break;
-		cnt = E.encode(input, sizeof(input), encoded);
+
+		encoded = base64_encode(reinterpret_cast<const unsigned char*>(input), strlen(input));
 		/* output the encoded bytes to the output file */
-		fwrite(encoded, sizeof(char), cnt, outputFile);
+    cout<<"Es: "<<encoded<< " con tamano "<<strlen(encoded.c_str())<<endl;
+		fwrite(encoded.c_str(), sizeof(char), strlen(encoded.c_str()), outputFile);
 	}
 	/* since we have reached the end of the input file, we know that
 	   there is no more input data; finalise the encoding */
-	cnt = E.encode(input, sizeof(input), encoded);
+	encoded = base64_encode(reinterpret_cast<const unsigned char*>(input), strlen(input));
 	/* write the last bytes to the output file */
-	fwrite(encoded, sizeof(char), cnt, outputFile);
+	//fwrite(encoded.c_str(), sizeof(char), strlen(encoded.c_str()), outputFile);
 	/*---------- STOP ENCODING  ----------*/
 
-	free(encoded);
+
 	free(input);
 
 }
@@ -144,32 +148,25 @@ int doClient (char * encodedFile){
 
 
 
-int main(){
-	base64::encoder E;
-	char* encoded = (char*)malloc(SIZE);
-	E.encode("Hola Mundo",sizeof("Hola Mundo"),encoded);
-	cout<<encoded<<endl;
-	FILE* inputFile = fopen("aaa.txt","r");
-	FILE * encodedFile = fopen("encodedTest.text", "w");
-	encode(inputFile,encodedFile);
 
-	fclose(inputFile);
-	fclose(encodedFile);
-	double total = 0;
-	for (int i = 0; i < 100; i++){
-		total += doClient("encodedTest.text");
- 	}
-	cout<<total<<endl;
+int main (){
+
+  char * prueba = "aaa";
+  string encode, decode;
+  encode = base64_encode(reinterpret_cast<const unsigned char*>(prueba), strlen(prueba));
+  decode = base64_decode(encode);
+
+  cout<<"Esto es encode: "<<encode<<endl;
+  cout<<"Asi es cuando se decodifica: "<<decode<<endl;
+
+  FILE* inputFile = fopen("aaa.txt","r");
+  FILE * encodedFile = fopen("encodedTest.text", "w");
+  encodeFile(inputFile,encodedFile);
+
+  fclose(inputFile);
+  fclose(encodedFile);
+
+  doClient("encodedTest.text");
 
 
-/*
-	encodedFile = fopen("encodedTest.text", "r");
-	FILE* dencodedFile = fopen("dencoded.txt", "w");
-
-	decode(encodedFile, dencodedFile);
-
-	fclose(encodedFile);
-	fclose(dencodedFile);
-	*/
-	return 0;
-	}
+}

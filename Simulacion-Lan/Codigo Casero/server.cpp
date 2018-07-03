@@ -1,13 +1,15 @@
-#include <b64/encode.h>
-#include <b64/decode.h>
-#include <fcntl.h>
-#include <stdio.h>
-#include <stdlib.h>
+#include "base64.cpp"
 #include <string.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
+#include <fcntl.h>
+#include <stdlib.h>
 #include <unistd.h>
-#include <assert.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <sys/stat.h>
+#include <netinet/in.h>
+#include <netdb.h>
+#include "Chrono.cpp"
+
 #define SIZE 512
 using namespace std;
 
@@ -15,11 +17,10 @@ using namespace std;
 void decode(FILE* inputFile, FILE* outputFile)
 {
 	cout<<"llego"<<endl;
-	base64::decoder E;
 	/* set up a destination buffer large enough to hold the decoded data */
 	int size = SIZE;
 	char* encoded = (char*)malloc(size);
-	char* decoded = (char*)malloc(1*size); /* ~3/4 x encoded */
+	string decoded ; /* ~3/4 x encoded */
 	/* we need an encoder and decoder state */
 	/* store the number of bytes encoded by a single call */
 	int cnt = 0;
@@ -30,22 +31,18 @@ void decode(FILE* inputFile, FILE* outputFile)
 		cnt = fread(encoded, sizeof(char), size, inputFile);
 		cout<<"llego al while y encode es"<<cnt<<endl;
 		if (cnt == 0) break;
-		cnt = E.decode(encoded, sizeof(encoded), decoded);
+		decoded = base64_decode(encoded);
 		cout<<"llego y decoded es: "<<decoded<<endl;
 		/* output the encoded bytes to the output file */
-		fwrite(decoded, sizeof(char), strlen(decoded), outputFile);
+		fwrite(decoded.c_str(), sizeof(char), strlen(decoded.c_str()), outputFile);
 	}
 	/*---------- START DECODING  ----------*/
 
-	free(encoded);
-	free(decoded);
+
+
 }
 
 
-/*
-	handles all the logic of creating a server and conecting it to the client plus send the encoded file to decoded
-	and sends confirmation to the client side.
-*/
 int doServer(){
     int client, server;
     int portNum = 1500;
@@ -122,10 +119,7 @@ int doServer(){
     return 0;
 }
 
-int main (){
 
-	for (int i = 0; i < 100; i++){
-		doServer();
-	}
-  return 0;
+int main(){
+  doServer();
 }
